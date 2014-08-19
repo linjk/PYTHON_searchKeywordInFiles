@@ -1,0 +1,147 @@
+############################################################
+# File: py_search.py - 查找文件里的特定字符(串)
+#       - 遍历目录和搜索文件中的关键字
+# Date: 2014/08/19
+# By  : LinJK
+############################################################
+import os  
+import sys  
+import cmd  
+      
+print( sys.argv  )                            #当前.py文件所在路径
+      
+class Tool(cmd.Cmd):  
+    def __init__(self):
+        bDir = "false"
+        cmd.Cmd.__init__(self)                #Initialize the base class          
+        print ( "Please set you search directory first : ")
+        print ( "Usage: <pathname: d:> <dirname: //dir1//dir2> ")
+        while bDir == "false":            
+            self.pathname = input("1>Input pathname: ")  
+            self.dirname  = input("2>Input dirname : ")
+            choice        = input("Ensure? y/n ")
+            if choice == "y":  
+                bDir = "true"
+                print( "@@Set pathname as: '%s'" %self.pathname )
+                print( "@@Set dirname  as: '%s'" %self.dirname  )
+                self.prompt   = "(find)$"
+                self.intro    = '''--FindKeywordInFileVv0.1 usage: 
+                set            # set dir and path parameters 
+                export         # export result file 
+                find (keyword) # set finding keyword 
+                ?              # show commands that you can enter
+                q              # exit current program, or use Ctrl+D(UNIX)|Ctrl+C(Dos/Windows)
+                '''                            
+            elif choice == "n":
+                continue
+            else:
+                print ("Please input y or n, enter again!")
+                continue
+          
+    def help_q(self):  
+        print ("<HELP>Quits the program")
+    def do_q(self, line):  
+        print ("Bye !")
+        sys.exit()  
+    #----------------------------------------------------------------------      
+    def help_set(self):  
+        print ("<HELP>Set parameter program used" ) 
+    def do_set(self, choice):  
+        print ( "Current para is: ")  
+        print ( "-->pathname: '%s'" %self.pathname ) 
+        print ( "-->dirname : '%s'" %self.dirname  )
+        choice = input("Do you wanna change? y/n ")  
+        if choice == "y":
+            print ( "Please enter you search directory : ")
+            print ( "Usage: <pathname: d:> <dirname: //dir1//dir2> ")
+            self.pathname = input("input pathname: ")  
+            self.dirname  = input("input dirname : ")  
+        print( "@@Set pathname as: '%s'" %self.pathname )
+        print( "@@Set dirname  as: '%s'" %self.dirname  )
+    #----------------------------------------------------------------------  
+    def help_find(self):                                #Input<help find>
+        print("<HELP>Set finding keyword,Input: find (KeyowrdToFind)") 
+    def do_find(self, keyword):  
+        if keyword == "":                               #When just input<find>
+            keyword = input("input finding keyword: ")  
+        print ("@@The keyword to find is: '%s'" %keyword)
+        GrepFromFile(self.pathname + self.dirname, keyword)  
+        print ("<<<<<Find over !>>>>>" ) 
+    #----------------------------------------------------------------------
+    def help_export(self):  
+        print ("<HELP>Export result file"  )
+    def do_export(self, para):  
+        print ("Pathname: '%s'" %sys.path[0])                    #export to the root-dir where .py file exist
+        WriteDirList(sys.path[0] + "//OS", "output.txt")         #export appointed dir's info to txt file 
+    #----------------------------------------------------------------------
+    def help_lcd(selef):
+        print ("<HELP>List cur path's or appointed path's info.")
+    def do_lcd(self, para):
+        listCurDir = os.listdir()
+        for lstdir in listCurDir:
+            print (lstdir)
+    
+#==============================================================================
+              
+# write file lists in according path  
+def WriteDirList(path, file):
+    print ("txt file exporting, please wait...")
+    export = ""  
+    for root, dirs, files in os.walk(path):  
+        export += "\n%s %s %s" %(root, dirs, files)
+    open(file, "w").write(export)
+    print ("export over !" ) 
+      
+# grep keyword from txt type file only  
+def GrepFromFile(path, keyword):
+    listCppFiles = []
+    listTxtFiles = []
+
+    try:
+        filelist = os.listdir(path)    
+        #print (filelist )                                 #打印当前目录下存在的所有文件，包括隐藏文件及目录
+    except FileNotFoundError as err:
+        print (err)
+        print ("Please enter \"set\" to set the correct directory!")
+        return
+        
+    #对要搜索的文件进行分类        
+    for file in filelist:                       
+        if ".cpp" in file:
+            listCppFiles.append(file)
+        if ".txt" in file:
+            listTxtFiles.append(file)
+    #print (listCppFiles)
+    #print (listTxtFiles)
+    #分文件类型进行查找
+    for cppfile in listCppFiles:
+        curfile = open(path + "//" + cppfile)
+        # print (curfile)   #curfile是文件的完整路径等信息
+        scanfiles(curfile, cppfile, keyword)
+    print ("--------------------------------------------------")
+    for txtfile in listTxtFiles:
+        curfile = open(path + "//" + txtfile)
+        scanfiles(curfile, txtfile, keyword)        
+            
+#查找文件里的关键字
+def scanfiles(curfile, file, keyword):
+    bFind = ""
+    txtfilevalidCnt = 0
+    
+    print ("-->Scanning <%s>..." %(file)  )
+    for line in curfile.readlines():                
+        if keyword in line:
+            txtfilevalidCnt += 1
+            print ("   " + str(txtfilevalidCnt) + ". " + line)  
+            bFind = "true"                    
+    if bFind != "true":  
+        print( "   Find nothing in <%s>" %(file) )    
+      
+######################################################################  
+# Start  
+######################################################################
+if __name__ == '__main__':  
+    cdc = Tool()  
+    cdc.cmdloop()  
+
+print( "End" ) 
